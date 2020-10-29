@@ -4,11 +4,14 @@ import shutil
 import sys
 
 
-def jpgToPng(oPath,tPath):
+def jpgToPng(oPath,tPath,mapName):
     itemlist = os.listdir(oPath)
+    minList=[mapName+"_s.jpg",mapName+"_b.jpg",mapName+"_t.jpg"]
     for fName in itemlist:
+
         boo = fName.find(".jpg")
-        if boo >= 0:
+        boo1 = fName in minList
+        if boo >= 0 and boo1 == False:
             im = Image.open(oPath+fName)
             png=tPath+fName;
             tt = png.replace(".jpg",".png",1)
@@ -17,8 +20,8 @@ def jpgToPng(oPath,tPath):
         else:
             shutil.copy(oPath+fName,tPath+fName)
 
-filrPath = "D:/baidudownload/map/"
-tPath="D:/baidudownload/_out1/"
+filrPath = "D:/map/map/"
+tPath="D:/map/_out1/"
 if os.path.exists(filrPath):
     filelist=os.listdir(filrPath)
     for fName in filelist:
@@ -30,4 +33,4 @@ if os.path.exists(filrPath):
             if not os.path.exists(tDir):
                 os.makedirs(tDir)
 
-            jpgToPng(fpath+"/",tDir+"/")
+            jpgToPng(fpath+"/",tDir+"/",fName)

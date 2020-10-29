@@ -1,0 +1,169 @@
+package uiPanel.rank
+{
+	import dataManager.UserGNControl;
+
+	import game.ui.test.RankItemUI;
+
+	import hx.Date.UsData;
+	import hx.GlobalVar;
+	import hx.Objvo.DragVO;
+	import hx.UserData;
+	import hx.Util.GgUtils;
+	import hx.Util.MoreUtil;
+
+	import laya.utils.Handler;
+
+	import morn.core3d3.UIClipText;
+
+	import uiManager.EventControl;
+	import uiManager.UIopenManager;
+
+	import uiPanel.MenuParams;
+	import uiPanel.role.MobileOtherView;
+	/**
+	 * ...
+	 * @author ...
+	 */
+	public class RankItem extends RankItemUI
+	{
+
+		public function RankItem()
+		{
+			tf_lvl.align = "left";
+
+			if(App.isGoldVer){
+				img_fight.skin = "layares/comp/img_yuanbao.png"
+				img_fight.y = 32
+			}
+			init_zdl();
+		}
+
+		private var zdlText:UIClipText;
+		private function init_zdl():void
+		{
+			this.clickHandler = new Handler(this,go);
+
+			img_fight.mouseEnabled = false;
+			zdlText = new UIClipText();
+
+			zdlText.scale(1,1);
+			zdlText.gap = -12;
+			zdlText.setSkin("png.juese.zhandoulizi", "0123456789", 1, 10);
+			zdlText.x = img_fight.x +  img_fight.width * img_fight.scaleX - 10;
+			zdlText.y = img_fight.y + (( img_fight.height * img_fight.scaleY - 40) / 2);
+			this.addChild(zdlText);
+		}
+
+		private function show_self(v:Boolean):void
+		{
+			img_rank.visible = tf_rank.visible = !v;
+			bg.visible = !v;
+
+			bg_self.visible = v;
+			img_rank_self.visible = v;
+			tf_rank_self.visible = v;
+		}
+		private const RankImgArr:* = ["1st", "2nd", "3rd"];
+		private function set rank(v:int):void
+		{
+			if (dataSource.is_self)
+			{
+				tf_rank_self.text = v+"";
+			}else{
+				if (v <= 3)
+				{
+					img_rank.visible = true;
+					img_rank.skin = "png.richang_new." + RankImgArr[v - 1];
+				}else{
+					img_rank.visible = false;
+					tf_rank.text = v + "";
+				}
+				tf_rank.visible = !img_rank.visible;
+				if(v < 5)
+					bg.skin = "png.richang_new.di" + v;
+				else
+					bg.skin = "png.richang_new.di" + 5;
+			}
+		}
+
+		private function set_other():void
+		{
+			tf_name.text = dataSource.name;
+			tf_lvl.text = "(Lv." + dataSource.lvl + ")";
+
+			GgUtils.linked_text2(2, [0, 0], function(i:int):*{
+				return [tf_name, tf_lvl][i];
+			});
+
+			tf_zy.text = dataSource.zy;
+			zdlText.text = dataSource.zdl;
+
+			if(dataSource.award && dataSource.award.length > 0){
+				var aw:* = MoreUtil.getVobycid(dataSource.award[0] + "");
+				tf_award_name.text = aw.name;
+				tf_award_count.text = "*" + dataSource.award[1];
+				img_award.skin = "png.comp.item." + dataSource.award[0];
+			}else{
+				tf_award_name.text = "";
+				img_award.skin = null;
+			}
+
+		}
+		/*is_self  rank  name lvl zy award zdl id
+		 * **/
+		override public function set dataSource(v:Object):void{
+			super.dataSource = v;
+			if (v)
+			{
+				show_self(v.is_self);
+
+				rank = v.rank;
+				set_other();
+			}
+		}
+
+		private function tt(data:UsData):void
+		{
+			var mp:MenuParams = new MenuParams(MenuParams.otherInfo, 0, MenuParams.ACTION_AUTO, data);
+			mp._isReturnPanel = new MenuParams(MenuParams.RankViewS);
+			UIopenManager.getInstance().Open(mp);
+		}
+
+		private function tt1(type:int, data:*):Boolean
+		{
+			if (type == UserGNControl.LOOK)
+			{
+				if(parseInt(GlobalVar.player.usData.sceneId/10000)== 3)
+				{
+					return true;
+				}
+				if(dataSource) EventControl.SendEvent(EventControl.ReqOtherPlayerInfo, [dataSource.id, new Handler(this,tt)]);
+				return false;
+			}
+			return false;
+		}
+
+		private function go():void
+		{
+			if (dataSource.is_self)
+			{
+				return;
+			}
+			else if (dataSource.id)
+			{
+				if (UserData.getInstance().data.id.equal(dataSource.id))
+					return;
+
+				MobileOtherView.thisView.arr = [UserGNControl.LOOK,UserGNControl.Team,UserGNControl.Jiaoyi, UserGNControl.ADDfriend, UserGNControl.TALK];
+				dataSource.nickname = dataSource.name;
+
+				MobileOtherView.thisView.tag = dataSource;
+				MobileOtherView.thisView.tempClickListener = new Handler(this,tt1);
+
+				MobileOtherView.thisView.show();
+			}
+		}
+
+	}
+
+}

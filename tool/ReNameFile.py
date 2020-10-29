@@ -1,7 +1,8 @@
 import os
 import shutil
+import sys
 
-filrPath = "C:/Users/lianc/Desktop/h5资源修改/战士-天魔神甲-男-压缩/stand/"
+filrPath = "C:/Users/lianc/Desktop/temp/102101111/"
 if os.path.exists(filrPath):
     filelist=os.listdir(filrPath)
     xcount=0;

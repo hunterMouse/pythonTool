@@ -1,0 +1,297 @@
+package uiPanel.rank
+{
+	import game.ui.test.RankViewUI;
+
+	import hx.GameClip2D;
+	import hx.Gameconfig.AnCategory;
+	import hx.GlobalVar;
+	import hx.Objvo.PaihangVo;
+	import hx.TabPane;
+	import hx.UserData;
+	import hx.Util.ErrorUtil;
+	import hx.Util.Iterator;
+	import hx.Util.TipsNew;
+
+	import laya.events.Event;
+	import laya.utils.Handler;
+
+	import uiManager.EventControl;
+
+	import uiPanel.title.TitleDataManager;
+
+	/**
+	 * ...
+	 * @author ...
+	 */
+	public class RankView extends RankViewUI
+	{
+		/**
+		 2：总榜
+		15：战士
+		16：法师
+		17：道士**/
+		private var table:Array = [
+			{name:"财富榜", tips: ErrorUtil.get(800002),ty:3  },
+			{name:"战士榜", tips: ErrorUtil.get(800003),ty:15 },
+			{name:"法师榜", tips: ErrorUtil.get(800003),ty:16 },
+			{name:"道士榜", tips: ErrorUtil.get(800003),ty:17 }
+			//{name:"财富榜", tips: ErrorUtil.get(800003),ty:3 }
+		];
+
+		private var rank_info:Object = null;
+		private var rank_info_self:Object = null;
+		private var tab_i:int;
+		private var tit:GameClip2D;
+		private var tab:TabPane;
+		private var titleObj:Object;
+
+		public function RankView()
+		{
+			if(App.isGoldVer){
+				table = [{name:"财富榜", tips: ErrorUtil.get(800002),ty:3  }];
+				b0.x = b3.x;
+				b1.visible = false;
+				b2.visible = false;
+				b3.visible = false;
+			}else{
+				b0.x = 583;
+				b1.visible = true;
+				b2.visible = true;
+				b3.visible = true;
+			}
+			tab = new TabPane(new Handler(this,onClickIdx));
+			var self:* = this;
+			Iterator.from_arr(table).enumerate().foreach(function(it:Array):void{
+				self[ "b" + it[0]].label = it[1].name;
+				tab.additem(self["b" + it[0]]);
+			});
+			l1.vScrollBarSkin = null;
+			l1.itemRender = RankItem;
+
+			EventControl.pushMeagss(EventControl.Setmytop, set_self_rank,this);
+			EventControl.pushMeagss(EventControl.FENCE_PAIHANG, set_oth_rank,this);
+			EventControl.pushMeagss(EventControl.SetPaihang, set_oth_rank,this);
+
+
+			rank_info = {};
+			rank_info_self = {};
+			but_wh.toolTip = null;
+			but_wh.on(Event.CLICK,this,onTips);
+			onClickIdx(0);
+
+			var o:Object = GlobalVar.definitions.getRankList();
+			titleObj = o.ranktitle;
+
+			tit = new GameClip2D();
+			tit.setPosition(430, 160);
+			tit.scaleX=tit.scaleY = 1.5;
+		}
+
+		private function set_tit_vis(b:Boolean):void
+		{
+			if(!tit){
+				return;
+			}
+			if (b)
+			{
+				if(!contains(tit))addChild(tit);
+			}else{
+				//if(tit.parent)
+				//tit.parent.remove(tit);
+				tit.removeSelf();
+			}
+		}
+
+		override public function show(closeOther:Boolean = true,except:* = null,index:int = 0):void
+		{
+			super.show( closeOther, except, index);
+			tab.setindex(0);
+			req_info();
+			set_tit_vis(true);
+		}
+
+		override public function close(type:String = null):void
+		{
+			super.close(type);
+			set_tit_vis(false);
+			if(tit) tit.destroy();
+		}
+
+		private function req_info():void
+		{
+			Iterator.from_arr(table).foreach(function(it:*):void{
+				EventControl.SendEvent(EventControl.S_paihangList, [it.ty, 0, 1, 10]);
+				if(it.ty == 2 || get_zy_form_ty(it.ty) == UserData.getInstance().data.faction)
+					EventControl.SendEvent(EventControl.S_myindex, [it.ty,0]);
+
+			});
+		}
+
+		private function fill_list(arr:Array):void
+		{
+			l1.array = arr;
+			refresh_self();
+		}
+
+		private function onClickIdx(i:int):void
+		{
+
+			tab_i = i;
+
+			if(rank_info[table[i].ty])
+				fill_list(rank_info[table[i].ty]);
+			else
+				fill_list([]);
+
+
+			if(titleObj && titleObj[table[i].ty]){
+				showTitle(titleObj[table[i].ty])
+			}else{
+				showTitle()
+			}
+			l1.scrollBar.value = 0;
+		}
+
+
+		public function showTitle(str:String=""):void{
+			var ary:Array = str.split(",");
+			var id:int = ary[0];
+			var fac:int= UserData.getInstance().data.faction
+			if(ary[1] >0){
+				fac = ary[1];
+			}
+
+			if ( id > 0){
+				tit.setSourcedata(AnCategory.EFFECT, id + "", true);
+				//tit.play();
+				var pAry:Array =  TitleDataManager.instance.get_property(id, fac);
+				if(pAry){
+					set_property(pAry)
+
+				}else{
+					proTxt.text = "";
+				}
+			}else{
+				set_tit_vis(false)
+			}
+
+		}
+		private static const PropertySpace:Number = 9;
+		private function set_property(arr:Array):void
+		{
+			var by:int = 0;
+			var allStr:String = "";
+			proTxt.y = 156 -(arr.length * 30 + (arr.length - 1) * 5) / 2;
+
+			for (var i:int = 0; i < arr.length;++i )
+			{
+				allStr += arr[i];
+				if(i != arr.length-1){
+					allStr += "<br/>"
+				}
+
+
+			}
+			proTxt.mouseEnabled = false;
+			proTxt.text = allStr;
+		}
+
+
+		private function onTips():void
+		{
+			this.addChild(but_wh);
+			TipsNew.instance.show_tips(but_wh,table[tab_i].tips,0.7,0.7,24);
+		}
+
+		private function set_self_rank(vo:PaihangVo):void
+		{
+			//if (vo.type == 2 || get_zy_form_ty(vo.type) == vo.faction)
+			{
+				var o:Object = null;
+				if (rank_info_self[vo.type])
+					o = rank_info_self[vo.type];
+				else
+					o = {};
+				o.is_self = true;
+				set_val(vo, o,vo.type);
+				rank_info_self[vo.type] = o;
+				if (vo.type == table[tab_i].ty)
+					refresh_self();
+			}
+		}
+
+		private function set_oth_rank(arr:Array, maxpag:int = 0):void
+		{
+			var type:int = arr[0].type;
+			var res:Array = null;
+			if (rank_info[type])
+			{
+				res = rank_info[type];
+			}else
+			{
+				res = [];
+			}
+			for (var i:* = 0; i < arr.length;++i)
+			{
+				var o:Object = null;
+				var p:PaihangVo = arr[i];
+				if (res[i])
+					o = res[i];
+				else
+					o = {};
+				o.is_self = false;
+				set_val(p, o,type);
+				res[i] = o;
+			}
+			for (; i < res.length;++i )
+			{
+				res[i] = null;
+			}
+			rank_info[type] = res;
+			if (type == table[tab_i].ty)
+				fill_list(rank_info[type]);
+		}
+
+		private function set_val(src:PaihangVo, dst:Object,type:int):void
+		{
+			dst.rank = src.index;
+			dst.name = src.name.split(".")[1];
+			dst.lvl = src.lvl;
+			dst.zy = GlobalVar.ZY_ARR[src.faction];
+			dst.award = get_award(type, src.index);
+			dst.zdl = src.value;
+			dst.id = src.id;
+		}
+
+		private function refresh_self():void
+		{
+			var ty:int = table[tab_i].ty;
+			if (rank_info_self[ty])
+			{
+				var arr:Array = rank_info[ty];
+				var new_arr:Array = arr.slice();
+				new_arr.splice(0,0, rank_info_self[ty]);
+				l1.array = new_arr;
+			}
+			l1.refresh();
+		}
+
+		private function get_zy_form_ty(ty:int):int
+		{
+			return ty - 14;
+		}
+
+		private function get_award(type:int, r:int):Array
+		{
+			var o:Object = GlobalVar.definitions.getRankList();
+			if(o[type] && o.rank[r - 1] >0){
+				var award :Object = o[type][o.rank[r - 1] - 1];
+
+				return [award.award_item[0],award.award_num[0]];
+			}
+			return [];
+
+		}
+	}
+
+}
