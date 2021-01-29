@@ -1,6 +1,9 @@
 import PIL.Image as img
 import os
 import shutil
+from tkinter import *
+import tkinter.filedialog
+
 def calculatesize(path):
     fList = os.listdir(path)
     xList=[]
@@ -34,19 +37,40 @@ def makeImg(oPath):
 
     os.makedirs(oPath+"_out/")
 
-    ofx,ofy = calculatesize(oPath+"Placements/")
+    # ofx,ofy = calculatesize(oPath+"Placements/")
 
     imgList=os.listdir(oPath)
     for fName in imgList:
         if(os.path.isfile(oPath+fName)):
-            o = img.open("touming.png")
+            o = img.open("touming1.png")
             p = img.open(oPath+fName)
 
-            x,y=readOff(oPath+"Placements/"+fName[0:-3]+"txt")
-            o.paste(p,(512+x,512+y))
+            # x,y=readOff(oPath+"Placements/"+fName[0:-3]+"txt")
+            cropped = p.crop((144, 144, 144+512, 144+512))
+            o.paste(cropped, (0, 0))
+            # o.paste(p,(512+x,512+y))
             o.save(oPath+"_out/"+fName)
 
-sPath = "C:/Users/lianc/Desktop/h5资源修改/外观/"
-dirList =  os.listdir(sPath)
-for dirName in dirList:
-    makeImg(sPath+dirName+"/")
+
+
+def xz():
+    filename = tkinter.filedialog.askdirectory()
+    sPath = filename+"/"
+    lb.config(text="您选择的文件是：" + sPath)
+    dirList =  os.listdir(sPath)
+    for dirName in dirList:
+        makeImg(sPath+dirName+"/")
+    lb.config(text="图片处理完毕")
+
+root = Tk()
+root.title("处理图片")
+root.geometry('500x300')
+
+lb = Label(root,text = '点击按钮选择文件夹')
+# lb.place(x=20,y=100)
+lb.pack()
+btn = Button(root,text="选择文件夹开始",command=xz)
+btn.place(x=200,y=200)
+root.mainloop()
+
+

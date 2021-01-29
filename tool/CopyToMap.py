@@ -36,8 +36,8 @@ def copyImg(orPath,tPath,mapName):
 
 
 oPath = "D:/map/_out1/"
-tImg="E:/cqres-new/cqres/web_gold/_out/assets/__out/map_android/"
-tDat="E:/cqres-new/cqres/web_gold/_out/assets/map_android/"
+tImg="E:/cqres-new/cqres/web_test/_out/assets/__out/map_android/"
+tDat="E:/cqres-new/cqres/web_test/_out/assets/map_android/"
 filelist=os.listdir(oPath)
 for filename in filelist:
     print("----"+filename)
